@@ -1,0 +1,17 @@
+.DS_Store
+
+__pycache__
+
+_voxel_downsample.cpp
+
+build/
+dist/
+*.egg-info/
+wheelhouse/
+
+*.so
+*.dylib
+*.dll
+*.exe
+*.o
+*.obj
