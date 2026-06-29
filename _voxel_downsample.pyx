@@ -18,7 +18,7 @@ cdef extern from "voxel_downsample.hpp":
         double voxel_size,
         vector[double]& out_points,
         vector[int64_t]& out_indices
-    ) except +
+    ) except + nogil
 
 def voxel_downsample(object points not None, double voxel_size):
     """
@@ -110,12 +110,10 @@ def voxel_downsample(object points not None, double voxel_size):
     else:
         return _voxel_downsample_impl[cnp.float64_t](points, voxel_size)
 
-# Adding `const` here accepts read-only memory buffers gracefully (Passes Test 15)
 cdef _voxel_downsample_impl(const floating[:, ::1] points, double voxel_size):
     cdef size_t num_points = points.shape[0]
     cdef bint is_float32 = (floating is cnp.float32_t)
 
-    # Initialize intermediate double pointer setup safely
     cdef const double* points_ptr = NULL
     cdef cnp.ndarray[double, ndim=2, mode="c"] points_double_alloca
 
@@ -125,31 +123,31 @@ cdef _voxel_downsample_impl(const floating[:, ::1] points, double voxel_size):
             points_double_alloca = np.ascontiguousarray(points, dtype=np.float64)
             points_ptr = &points_double_alloca[0, 0]
         else:
-            # Memoryview baseline pointer direct cast using a safe elements address
             points_ptr = <const double*>&points[0, 0]
 
     cdef vector[double] out_points
     cdef vector[int64_t] out_indices
 
-    # Execute unchanged C++ core logic routine
-    cpp_voxel_downsample_tracked(points_ptr, num_points, voxel_size, out_points, out_indices)
+    with nogil:
+        cpp_voxel_downsample_tracked(points_ptr, num_points, voxel_size, out_points, out_indices)
     
     cdef size_t out_num_points = out_indices.size()
-    
-    # Initialize output data types matching original input precision (Passes Test 13)
     cdef object target_dtype = np.float32 if is_float32 else np.float64
-    cdef cnp.ndarray[cnp.int64_t, ndim=1, mode="c"] res_indices = np.empty(out_num_points, dtype=np.int64)
 
-    # Temporary allocation arrays to construct outputs cleanly
+    cdef cnp.ndarray[cnp.int64_t, ndim=1, mode="c"] res_indices = np.empty(out_num_points, dtype=np.int64)
     cdef cnp.ndarray[double, ndim=2, mode="c"] res_points_double = np.empty((out_num_points, 3), dtype=np.float64)
     
+    cdef double[:, ::1] res_points_view = res_points_double
+    cdef int64_t[::1] res_indices_view = res_indices
     cdef size_t i
+
     if out_num_points > 0:
-        for i in range(out_num_points):
-            res_points_double[i, 0] = out_points[i * 3]
-            res_points_double[i, 1] = out_points[i * 3 + 1]
-            res_points_double[i, 2] = out_points[i * 3 + 2]
-            res_indices[i] = out_indices[i]
+        with nogil:
+            for i in range(out_num_points):
+                res_points_view[i, 0] = out_points[i * 3]
+                res_points_view[i, 1] = out_points[i * 3 + 1]
+                res_points_view[i, 2] = out_points[i * 3 + 2]
+                res_indices_view[i] = out_indices[i]
             
     # Cast points array back down to float32 if the input was float32
     cdef object res_points = res_points_double.astype(target_dtype, copy=False)
