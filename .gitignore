@@ -9,6 +9,8 @@ dist/
 *.egg-info/
 wheelhouse/
 
+archive/
+
 *.so
 *.dylib
 *.dll
