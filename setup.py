@@ -19,7 +19,5 @@ extensions = [
 ]
 
 setup(
-    name="pcv_voxel_downsample",
-    version="1.1.0",
     ext_modules=cythonize(extensions),
 )
