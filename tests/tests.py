@@ -2,9 +2,9 @@ import sys
 import os
 
 if not os.environ.get("GITHUB_ACTIONS"):
-    repo_root = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
-    if repo_root not in sys.path:
-        sys.path.insert(0, repo_root)
+    path = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'src', ))
+    if path not in sys.path:
+        sys.path.insert(0, path)
 
 import unittest
 import numpy as np
