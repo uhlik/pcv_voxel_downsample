@@ -15,6 +15,7 @@ dependencies = [
 [tool.setuptools]
 package-dir = {"" = "src"}
 packages = ["pcv_voxel_downsample"]
+include-package-data = true
 
 [tool.cibuildwheel]
 build = "cp311-* cp313-*"

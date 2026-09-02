@@ -1,0 +1,3 @@
+include src/pcv_voxel_downsample/*.pyx
+include src/pcv_voxel_downsample/*.hpp
+recursive-include src/pcv_voxel_downsample *.so *.pyd
