@@ -1,4 +1,3 @@
-import os
 import sys
 from setuptools import setup, Extension
 from Cython.Build import cythonize
@@ -11,14 +10,16 @@ else:
 
 extensions = [
     Extension(
-        name="pcv_voxel_downsample._voxel_downsample",
-        sources=["src/pcv_voxel_downsample/_voxel_downsample.pyx"],
-        include_dirs=[np.get_include(), "src/pcv_voxel_downsample"],
+        name="pcv_voxel_downsample",
+        sources=["_voxel_downsample.pyx"],
+        include_dirs=[np.get_include(), "."],
         language="c++",
         extra_compile_args=extra_compile_args,
     )
 ]
 
 setup(
-    ext_modules=cythonize(extensions, language_level="3"),
+    name="pcv_voxel_downsample",
+    version="1.1.0",
+    ext_modules=cythonize(extensions),
 )

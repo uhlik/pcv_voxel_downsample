@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pcv_voxel_downsample"
-version = "1.2.0"
+version = "1.1.0"
 readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
@@ -13,9 +13,7 @@ dependencies = [
 ]
 
 [tool.setuptools]
-package-dir = {"" = "src"}
-packages = ["pcv_voxel_downsample"]
-include-package-data = true
+py-modules = []
 
 [tool.cibuildwheel]
 build = "cp311-* cp313-*"
