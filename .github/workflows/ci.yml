@@ -44,7 +44,8 @@ jobs:
           python -m pip install maturin pytest numpy>=2.0.0
 
       - name: Compile and Link Extension
-        run: maturin build --release --out dist
+        # run: maturin build --release --out dist
+        run: maturin build --release --out dist ${{ contains(matrix.os, 'ubuntu') && '--compatibility manylinux2014' || '' }}
 
       - name: Execute PyTest Suite
         run: |
@@ -99,7 +100,8 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           command: build
-          args: --release --out dist --interpreter python${{ matrix.python-version }}
+          # args: --release --out dist --interpreter python${{ matrix.python-version }}
+          args: --release --out dist --interpreter python${{ matrix.python-version }} ${{ contains(matrix.os, 'ubuntu') && '--compatibility manylinux2014' || '' }}
           target: ${{ matrix.target }}
 
       # Verification now runs on ALL systems since they are all native environments!
