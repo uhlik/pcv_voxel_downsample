@@ -45,10 +45,17 @@ jobs:
           python -m pip install maturin pytest numpy>=2.0.0
 
       - name: Compile and Link Extension
-        run: maturin develop --release
+        run: |
+          # Build the wheel locally in the runner
+          maturin build --release --out dist
 
       - name: Execute PyTest Suite
-        run: pytest tests/
+        run: |
+          # Install the local wheel file directly into the runner environment
+          python -m pip install --no-index --find-links=dist/ pcv_voxel_downsample
+          
+          # Run pytest as normal
+          pytest tests/
 
   # --- STAGE 2: COMPILE, BUNDLE & POST-BUILD VERIFY WHEELS ---
   build-wheels:
