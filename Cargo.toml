@@ -1,0 +1,21 @@
+[package]
+name = "pcv_voxel_downsample"
+version = "1.2.0"
+edition = "2021"
+license = "MIT"
+readme = "README.md"
+
+[lib]
+name = "pcv_voxel_downsample"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { version = "0.22", features = ["extension-module"] }
+numpy = "0.22"
+rayon = "1.10"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"

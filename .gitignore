@@ -1,0 +1,45 @@
+# ==========================================
+# Rust / Cargo Compilations
+# ==========================================
+/target/
+**/*.rs.bk
+Cargo.lock
+
+# ==========================================
+# Python / Build Systems
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging outputs
+/dist/
+/build/
+*.egg-info/
+.eggs/
+
+# Maturin temporary build artifacts
+.maturin/
+
+# ==========================================
+# Environments & Dependency Management
+# ==========================================
+.venv/
+venv/
+ENV/
+env/
+.env
+.pytest_cache/
+
+# ==========================================
+# IDEs, Editors & OS Metadata
+# ==========================================
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+.DS_Store
+Thumbs.db

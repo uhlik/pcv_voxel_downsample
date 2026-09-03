@@ -1,0 +1,120 @@
+name: CI & Separate Wheel Build
+
+on:
+  workflow_dispatch:
+
+jobs:
+  # --- STAGE 1: PRE-BUILD TEST EXTENSION CONTIGUITY ---
+  test:
+    name: Test on ${{ matrix.os }} (Py ${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # Using valid, accessible GitHub-hosted runner configurations
+        os: [
+          ubuntu-latest,
+          ubuntu-24.04-arm,
+          windows-latest,
+          macos-15-intel,
+          macos-latest
+        ]
+        python-version: ["3.11", "3.13"]
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      - name: Install Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust Dependencies
+        uses: swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.os }}-py${{ matrix.python-version }}
+
+      - name: Install Build & Test Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install maturin pytest numpy>=2.0.0
+
+      - name: Compile and Link Extension
+        run: maturin develop --release
+
+      - name: Execute PyTest Suite
+        run: pytest tests/
+
+  # --- STAGE 2: COMPILE, BUNDLE & POST-BUILD VERIFY WHEELS ---
+  build-wheels:
+    name: Wheel ${{ matrix.os }} (${{ matrix.target }}) - Py ${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
+    needs: [test]
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.13"]
+        # Explicit matrix breakdown correctly crossed against python-version array
+        os: [ubuntu-latest, ubuntu-24.04-arm, windows-latest, macos-15-intel, macos-latest]
+        include:
+          - os: ubuntu-latest
+            target: x86_64
+          - os: ubuntu-24.04-arm
+            target: aarch64
+          - os: windows-latest
+            target: x64
+          # Handles cross-compilation generation for Windows ARM64 targets safely
+          - os: windows-latest
+            target: aarch64
+          - os: macos-15-intel
+            target: x86_64
+          - os: macos-latest
+            target: aarch64
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up Target Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      # Required targeting toolchains for cross-compiled architectures
+      - name: Install Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ (matrix.os == 'windows-latest' && matrix.target == 'aarch64') && 'aarch64-pc-windows-msvc' || '' }}
+
+      - name: Construct Target Wheel
+        uses: PyO3/maturin-action@v1
+        with:
+          command: build
+          args: --release --out dist --interpreter python${{ matrix.python-version }}
+          target: ${{ matrix.target }}
+
+      # Verifies the output wheel works natively (Skips Windows ARM64 due to host execution limits)
+      - name: Install and Verify Wheel Locally
+        if: |
+          !(matrix.os == 'windows-latest' && matrix.target == 'aarch64')
+        working-directory: tests
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pytest numpy>=2.0.0
+          
+          # Force installation using the local wheel file generated in the previous step
+          python -m pip install --no-index --find-links=../dist/ pcv_voxel_downsample
+          
+          # Executes cleanly without loading raw root files
+          pytest test_voxel_downsample.py
+
+      - name: Upload Finished Wheel Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-${{ matrix.os }}-${{ matrix.target }}-py${{ matrix.python-version }}
+          path: dist/*.whl
